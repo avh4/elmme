@@ -1,41 +1,50 @@
-module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert) where
+module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert, newline) where
 
 import Core.Text as Text
 import Core.Series as Series
+import Core.Series (CanSplit(..))
 import Markdown.Inlines as Inlines
 import Html (Html, node, text)
 import Html.Attributes (class)
 
 data Value
-  = Heading Int Inlines.Value -- level, content
-  | Paragraph Inlines.Value -- content
+  = Heading Int Text.Value -- level, content
+  | Paragraph Text.Value -- content
   | CodeBlock (Maybe Text.Value) Text.Value -- language, content
 
 data Zipper
-  = HeadingZipper Int Inlines.Zipper
-  | ParagraphZipper Inlines.Zipper
+  = HeadingZipper Int Text.Zipper
+  | ParagraphZipper Text.Zipper
   | CodeBlockZipper (Maybe Text.Value) Text.Zipper
 
 toZipper : Value -> Zipper
 toZipper v = case v of
-  Heading n c -> HeadingZipper n (Inlines.toZipper c)
-  Paragraph c -> ParagraphZipper (Inlines.toZipper c)
+  Heading n c -> HeadingZipper n (Text.toZipper c)
+  Paragraph c -> ParagraphZipper (Text.toZipper c)
   CodeBlock ml c -> CodeBlockZipper ml (Text.toZipper c)
 
 toValue : Zipper -> Value
 toValue z = case z of
-  HeadingZipper n c -> Heading n (Inlines.toValue c)
-  ParagraphZipper c -> Paragraph (Inlines.toValue c)
+  HeadingZipper n c -> Heading n (Text.toValue c)
+  ParagraphZipper c -> Paragraph (Text.toValue c)
   CodeBlockZipper ml c -> CodeBlock ml (Text.toValue c)
 
-apply : (Inlines.Zipper -> Inlines.Zipper) -> (Text.Zipper -> Text.Zipper) -> Zipper -> Zipper
-apply ifn tfn z = case z of
-  HeadingZipper n c -> HeadingZipper n (ifn c)
-  ParagraphZipper c -> ParagraphZipper (ifn c)
+apply : (Text.Zipper -> Text.Zipper) -> Zipper -> Zipper
+apply tfn z = case z of
+  HeadingZipper n c -> HeadingZipper n (tfn c)
+  ParagraphZipper c -> ParagraphZipper (tfn c)
   CodeBlockZipper ml c -> CodeBlockZipper ml (tfn c)
 
 insert : String -> Zipper -> Zipper
-insert s = apply (Inlines.insert s) (Text.insert s)
+insert s = apply (Text.insert s)
+
+newline : Zipper -> CanSplit Value Zipper
+newline z = case z of
+  HeadingZipper n s -> case Text.split s of
+    (l,r) -> SplitRight (Heading n l) (ParagraphZipper r)
+  ParagraphZipper s -> case Text.split s of
+    (l,r) -> SplitRight (Paragraph l) ( ParagraphZipper r)
+  CodeBlockZipper ml c -> NoSplit <| CodeBlockZipper ml (Text.insert "\n" c)
 
 --
 -- type Cursor = Span.Cursor

@@ -1,4 +1,4 @@
-module Markdown.Blocks (Value,Zipper,toZipper,toValue,insert) where
+module Markdown.Blocks (Value,Zipper, toZipper, toValue, insert, newline) where
 
 import Core.Series as Series
 import Markdown.Block as Block
@@ -14,3 +14,6 @@ toValue = Series.toValue Block.toValue
 
 insert : String -> Zipper -> Zipper
 insert s = Series.apply (Block.insert s)
+
+newline : Zipper -> Zipper
+newline = Series.applySplit Block.newline

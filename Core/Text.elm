@@ -38,7 +38,7 @@ backspace (left,right) = String.uncons left
   |> Maybe.map (\(_,tail) -> (tail, right))
 
 split : Zipper -> (Value, Zipper)
-split (left,right) = (left, ("",right))
+split (left,right) = (String.reverse left, ("",right))
 
 -- render : String -> Maybe Cursor -> Html
 -- render value msel = case msel of

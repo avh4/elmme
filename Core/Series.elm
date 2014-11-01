@@ -1,7 +1,11 @@
-module Core.Series (Value,Zipper,toZipper,toValue,apply) where
+module Core.Series (Value, Zipper, toZipper ,toValue, apply, CanSplit(..), applySplit) where
 
 type Value a = [a]
 type Zipper a z = ([a],z,[a])
+
+data CanSplit v z
+  = SplitRight v z
+  | NoSplit z
 
 toZipper : (a -> z) -> Value a -> Zipper a z
 toZipper fn (a::tail) = ([],fn a,tail)
@@ -11,6 +15,11 @@ toValue fn (left,cur,right) = reverse left ++ [fn cur] ++ right
 
 apply : (z -> z) -> Zipper a z -> Zipper a z
 apply fn (left,cur,right) = (left,fn cur,right)
+
+applySplit : (z -> CanSplit a z) -> Zipper a z -> Zipper a z
+applySplit fn (left,cur,right) = case fn cur of
+  SplitRight l v -> (l :: left, v, right)
+  NoSplit v -> (left, v, right)
 
 --
 -- type Value a = [a]
