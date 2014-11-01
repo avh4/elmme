@@ -66,7 +66,7 @@ apk key last = case key of
   Keys.Right -> { last | selection <- goRight last.selection }
   Keys.Enter -> last
   Keys.Character s -> insertInModel last s
-  Keys.Nothing -> last
+  _ -> last
 
 -- RENDER
 
