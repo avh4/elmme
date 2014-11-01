@@ -1,4 +1,4 @@
-module Markdown.Blocks (Value,Zipper, toZipper, toValue, insert, newline, apply) where
+module Markdown.Blocks (Value,Zipper, toZipper, toValue, insert, newline, apply, applyMaybe) where
 
 import Core.Series as Series
 import Markdown.Block as Block
@@ -20,3 +20,6 @@ newline = Series.applySplit Block.newline
 
 apply : (Block.Zipper -> Block.Zipper) -> Zipper -> Zipper
 apply = Series.apply
+
+applyMaybe : (Block.Zipper -> Maybe Block.Zipper) -> Zipper -> Zipper
+applyMaybe = Series.applyMaybe

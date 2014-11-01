@@ -1,4 +1,4 @@
-module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert, newline, promoteHeading) where
+module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert, newline, promoteHeading, backspace) where
 
 import Core.Text as Text
 import Core.Series as Series
@@ -6,6 +6,7 @@ import Core.Series (CanSplit(..))
 import Markdown.Inlines as Inlines
 import Html (Html, node, text)
 import Html.Attributes (class)
+import Maybe
 
 data Value
   = Heading Int Text.Value -- level, content
@@ -35,6 +36,12 @@ apply tfn z = case z of
   ParagraphZipper c -> ParagraphZipper (tfn c)
   CodeBlockZipper ml c -> CodeBlockZipper ml (tfn c)
 
+applyMaybe : (Text.Zipper -> Maybe Text.Zipper) -> Zipper -> Maybe Zipper
+applyMaybe tfn z = case z of
+  HeadingZipper n c -> Maybe.map (\c' -> HeadingZipper n c') (tfn c)
+  ParagraphZipper c -> Maybe.map (\c' -> ParagraphZipper c') (tfn c)
+  CodeBlockZipper ml c -> Maybe.map (\c' -> CodeBlockZipper ml c') (tfn c)
+
 insert : String -> Zipper -> Zipper
 insert s = apply (Text.insert s)
 
@@ -43,6 +50,7 @@ newline z = case z of
   HeadingZipper n s -> case Text.split s of
     (l,r) -> SplitRight (Heading n l) (ParagraphZipper r)
   ParagraphZipper s -> case Text.split s of
+    ("",r) -> NoSplit <| ParagraphZipper r
     (l,r) -> SplitRight (Paragraph l) ( ParagraphZipper r)
   CodeBlockZipper ml c -> NoSplit <| CodeBlockZipper ml (Text.insert "\n" c)
 
@@ -51,23 +59,4 @@ promoteHeading z = case z of
   ParagraphZipper s -> HeadingZipper 2 s
   x -> x
 
---
--- type Cursor = Span.Cursor
---
--- update : (Block, Cursor) -> String -> Block
--- update (value, cursor) char = case value of
---   Heading h span -> Heading h <| Span.update (span, cursor) char
---   Paragraph span -> Paragraph <| Span.update (span, cursor) char
---   CodeBlock lang s -> CodeBlock lang <| Span.updateString (s, cursor) char
---
--- move (value, cursor) char = case value of
---   Heading _ span -> Span.move (span, cursor) char
---   Paragraph span -> Span.move (span, cursor) char
---   CodeBlock _ s -> Span.moveString (s, cursor) char
---
--- render : Block -> Maybe Cursor -> Html
--- render block mc = case block of
---   Heading 1 span -> node "h1" [] [ Span.render span mc ]
---   Heading _ span -> node "h1" [] [ Span.render span mc ]
---   Paragraph span -> node "p" [] [ Span.render span mc ]
---   CodeBlock _ s -> node "code" [] [ text s ] -- TODO render cursor
+backspace = applyMaybe Text.backspace

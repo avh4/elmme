@@ -1,7 +1,9 @@
-module Core.Series (Value, Zipper, toZipper ,toValue, apply, CanSplit(..), applySplit) where
+module Core.Series (Value, Zipper, toZipper ,toValue, apply, CanSplit(..), applySplit, applyMaybe, map) where
 
-type Value a = [a]
-type Zipper a z = ([a],z,[a])
+import List
+
+type Value v = [v]
+type Zipper v z = ([v],z,[v])
 
 data CanSplit v z
   = SplitRight v z
@@ -21,6 +23,14 @@ applySplit fn (left,cur,right) = case fn cur of
   SplitRight l v -> (l :: left, v, right)
   NoSplit v -> (left, v, right)
 
+applyMaybe : (z -> Maybe z) -> Zipper a z -> Zipper a z
+applyMaybe fn (left,cur,right) = case fn cur of
+  Just c -> (left, c, right)
+  Nothing -> (left, cur, right)
+
+map : (v -> a) -> (z -> a) -> Zipper v z -> [a]
+map vfn zfn (left,cur,right) =
+  List.map vfn (List.reverse left) ++ [zfn cur] ++ List.map vfn right
 --
 -- type Value a = [a]
 -- type Cursor a = (Int, a)
