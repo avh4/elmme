@@ -1,4 +1,4 @@
-module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert, newline) where
+module Markdown.Block (Value(..), Zipper(..), toZipper, toValue, insert, newline, promoteHeading) where
 
 import Core.Text as Text
 import Core.Series as Series
@@ -45,6 +45,11 @@ newline z = case z of
   ParagraphZipper s -> case Text.split s of
     (l,r) -> SplitRight (Paragraph l) ( ParagraphZipper r)
   CodeBlockZipper ml c -> NoSplit <| CodeBlockZipper ml (Text.insert "\n" c)
+
+promoteHeading : Zipper -> Zipper
+promoteHeading z = case z of
+  ParagraphZipper s -> HeadingZipper 2 s
+  x -> x
 
 --
 -- type Cursor = Span.Cursor
